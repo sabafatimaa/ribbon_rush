@@ -34,4 +34,4 @@ export const INITIAL_SNAKE = [
   { x: 10, y: 12 },
 ];
 export const INITIAL_DIRECTION = { x: 0, y: -1 }; // Moving Up
-export const GAME_SPEED = 70; // Faster: from 100ms to 70ms per tick
+export const GAME_SPEED = 150; // Slower cadence for better control

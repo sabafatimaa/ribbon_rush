@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Play, Pause, SkipForward, SkipBack, Music2, Volume2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { TRACKS } from '../constants';
+import { neuralSynth } from '../services/neuralSynth';
 
 export default function MusicPlayer() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -30,7 +31,14 @@ export default function MusicPlayer() {
     };
   }, [isPlaying, currentTrackIndex]);
 
-  const handleTogglePlay = () => setIsPlaying(!isPlaying);
+  const handleTogglePlay = async () => {
+    if (!isPlaying) {
+      await neuralSynth.start();
+    } else {
+      neuralSynth.stop();
+    }
+    setIsPlaying(!isPlaying);
+  };
 
   const handleNext = () => {
     setCurrentTrackIndex((prev) => (prev + 1) % TRACKS.length);
@@ -51,107 +59,82 @@ export default function MusicPlayer() {
   const currentTime = (progress / 100) * currentTrack.duration;
 
   return (
-    <div className="w-full max-w-sm bg-black/40 backdrop-blur-xl border border-white/10 rounded-3xl p-6 relative overflow-hidden" id="music-player">
-      <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
-        <motion.div 
-          className="h-full bg-neon-cyan neon-shadow-cyan"
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ ease: "linear" }}
-        />
-      </div>
-
-      <div className="flex items-center gap-6 mt-4">
-        {/* Album Art Placeholder */}
+    <div className="w-full max-w-[320px] mx-auto relative shrink-0" id="music-player">
+      <div className="flex flex-col items-center gap-8">
+        {/* Record/Vinyl disk feel but coquette */}
         <motion.div 
           key={currentTrack.id}
-          initial={{ scale: 0.8, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="w-24 h-24 rounded-2xl flex-shrink-0 flex items-center justify-center relative overflow-hidden group"
-          style={{ backgroundColor: `${currentTrack.color}22` }}
+          animate={{ rotate: isPlaying ? 360 : 0 }}
+          transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+          className="w-48 h-48 rounded-full flex items-center justify-center relative border-8 border-white p-2.5 bg-coquette-pink/10 shadow-lg"
+          style={{ borderColor: currentTrack.color + '44' }}
         >
-          <Music2 className="w-10 h-10 text-white/20 group-hover:text-white/40 transition-colors" />
-          <motion.div 
-            className="absolute inset-0 pointer-events-none opacity-20"
-            animate={{ 
-              background: isPlaying 
-                ? [
-                    `radial-gradient(circle, ${currentTrack.color} 0%, transparent 70%)`,
-                    `radial-gradient(circle, ${currentTrack.color} 30%, transparent 70%)`,
-                    `radial-gradient(circle, ${currentTrack.color} 0%, transparent 70%)`
-                  ]
-                : `radial-gradient(circle, ${currentTrack.color} 0%, transparent 70%)`
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
+          <div className="w-full h-full rounded-full border border-black/10 flex items-center justify-center overflow-hidden bg-coquette-cream">
+             <Music2 className="w-16 h-16 text-black/10" />
+             <div className="absolute inset-6 rounded-full border border-black/5" />
+             <div className="absolute inset-14 rounded-full border border-black/5" />
+          </div>
+          <div className="absolute top-1/2 left-1/2 w-6 h-6 bg-white border border-black/10 rounded-full -translate-x-1/2 -translate-y-1/2 shadow-inner" />
         </motion.div>
 
-        <div className="flex-1 min-w-0">
+        <div className="text-center space-y-2">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentTrack.title}
-              initial={{ x: -10, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: 10, opacity: 0 }}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
             >
-              <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-tight font-sans">
+              <h3 className="text-xl font-serif italic text-black leading-tight tracking-tight truncate px-4">
                 {currentTrack.title}
               </h3>
-              <p className="text-[12px] text-neon-cyan font-mono tracking-widest uppercase">
-                NODE_SRC: {currentTrack.artist}
+              <p className="text-xs font-sans tracking-[0.4em] text-black/40 uppercase mt-2 font-bold">
+                {currentTrack.artist}
               </p>
             </motion.div>
           </AnimatePresence>
-          <div className="mt-3 flex items-center gap-2">
-            <span className="text-[9px] font-bold px-2 py-0.5 bg-neon-magenta/20 text-neon-magenta border border-neon-magenta/30 uppercase tracking-[0.2em]">
-              {currentTrack.genre}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-10 flex flex-col gap-6">
-        <div className="flex justify-between text-[14px] font-mono text-white/40 tabular-nums tracking-widest">
-          <span className="text-neon-cyan">{formatTime(currentTime)}</span>
-          <span>{formatTime(currentTrack.duration)}</span>
         </div>
 
-        <div className="flex items-center justify-center gap-10">
+        <div className="w-full space-y-3 px-2">
+           <div className="h-1.5 bg-black/5 rounded-full overflow-hidden shadow-inner">
+             <motion.div 
+               className="h-full bg-coquette-gold"
+               initial={{ width: 0 }}
+               animate={{ width: `${progress}%` }}
+               transition={{ ease: "linear" }}
+             />
+           </div>
+           <div className="flex justify-between text-[9px] font-mono text-black/30 tracking-widest">
+              <span>{formatTime(currentTime)}</span>
+              <span>{formatTime(currentTrack.duration)}</span>
+           </div>
+        </div>
+
+        <div className="flex items-center gap-10">
           <button 
             onClick={handlePrev}
-            className="p-2 text-white/40 hover:text-neon-cyan hover:drop-shadow-[0_0_8px_#00f2ff] transition-all cursor-pointer group"
-            id="prev-btn"
+            className="text-black/20 hover:text-coquette-gold hover:scale-110 transition-all cursor-pointer"
           >
-            <SkipBack className="group-active:scale-90 transition-transform" fill="currentColor" size={28} />
+            <SkipBack size={24} fill="currentColor" />
           </button>
           
           <button 
             onClick={handleTogglePlay}
-            className="w-20 h-20 rounded-full flex items-center justify-center bg-transparent border-2 border-white text-white hover:border-neon-cyan hover:text-neon-cyan hover:shadow-[0_0_30px_rgba(0,242,255,0.4)] transition-all cursor-pointer relative group overflow-hidden"
-            id="play-pause-btn"
+            className="w-16 h-16 rounded-full flex items-center justify-center bg-white text-black border border-black/5 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer group"
           >
-            <div className="absolute inset-0 bg-white/5 group-hover:bg-neon-cyan/10 transition-colors" />
             {isPlaying ? (
-              <Pause fill="currentColor" size={32} className="relative z-10 drop-shadow-[0_0_10px_currentColor]" />
+              <Pause fill="currentColor" size={24} />
             ) : (
-              <Play className="ml-1 relative z-10 drop-shadow-[0_0_10px_currentColor]" fill="currentColor" size={32} />
+              <Play className="ml-1.5" fill="currentColor" size={24} />
             )}
           </button>
 
           <button 
             onClick={handleNext}
-            className="p-2 text-white/40 hover:text-neon-cyan hover:drop-shadow-[0_0_8px_#00f2ff] transition-all cursor-pointer group"
-            id="next-btn"
+            className="text-black/20 hover:text-coquette-gold hover:scale-110 transition-all cursor-pointer"
           >
-            <SkipForward className="group-active:scale-90 transition-transform" fill="currentColor" size={28} />
+            <SkipForward size={24} fill="currentColor" />
           </button>
-        </div>
-
-        <div className="flex items-center gap-3 mt-2 px-4">
-          <Volume2 size={14} className="text-white/20" />
-          <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
-            <div className="h-full w-2/3 bg-white/20 rounded-full" />
-          </div>
         </div>
       </div>
     </div>

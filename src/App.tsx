@@ -16,151 +16,119 @@ import { motion } from 'motion/react';
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-cyber-black text-white relative overflow-hidden flex flex-col font-sans scanlines">
-      {/* Background Ambience */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden blur-[80px] opacity-20">
-        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_center,rgba(0,242,255,0.15)_0,transparent_70%)]" />
-      </div>
-
-      <div className="absolute inset-0 pointer-events-none opacity-[0.05] mix-blend-overlay bg-noise" />
-
-      {/* Header */}
-      <header className="relative z-10 px-10 py-8 flex justify-between items-start border-b border-white/10 backdrop-blur-md">
-        <div className="flex gap-6 items-center">
+    <div className="h-screen max-h-screen bg-coquette-cream text-[#2d2d2d] relative overflow-hidden flex flex-col font-sans selection:bg-coquette-pink selection:text-black paper-texture">
+      {/* Decorative Floral Accents */}
+      <div className="absolute inset-0 pointer-events-none watercolor-floral" />
+      
+      <header className="relative z-10 px-8 py-3 flex justify-between items-center border-b border-black/5 backdrop-blur-md shrink-0">
+        <div className="flex gap-4 items-center font-serif">
           <motion.div 
             animate={{ 
-              rotate: [0, 90, 180, 270, 360],
-              scale: [1, 1.1, 1]
+              rotate: [0, 5, -5, 0],
+              scale: [1, 1.05, 1]
             }} 
-            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-            className="w-12 h-12 bg-white text-black flex items-center justify-center border-4 border-neon-cyan neon-shadow-cyan"
+            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+            className="w-8 h-8 bg-white rounded-full flex items-center justify-center border border-coquette-gold/20 shadow-sm"
           >
-            <Cpu size={28} />
+            <Zap className="text-coquette-gold" size={16} />
           </motion.div>
           <div>
-            <h1 className="text-4xl font-black uppercase tracking-[-0.1em] italic text-neon-magenta neon-text-magenta leading-none">
-              NEON_PULSE.exe
+            <h1 className="text-xl font-light italic tracking-tight text-black leading-none">
+              Ribbon Rush
             </h1>
-            <p className="text-[12px] font-mono tracking-[0.4em] text-neon-cyan mt-2">
-              STATUS: [FRAGMENTED_REALITY_STABLE]
-            </p>
           </div>
         </div>
-
-        <div className="hidden md:flex flex-col items-end gap-3 font-mono text-[10px] tracking-widest text-white/30">
-          <div className="flex items-center gap-3">
-            <span className="text-neon-cyan border border-neon-cyan/20 px-2 py-0.5">CORE_01: ONLINE</span>
-            <span className="animate-pulse">_</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-neon-magenta border border-neon-magenta/20 px-2 py-0.5">BUFFER: 1024KB</span>
-            <Activity size={14} className="text-neon-magenta" />
+        <div className="hidden md:flex items-center gap-6 font-serif italic text-xs text-black/40">
+          <div className="flex items-center gap-2">
+            <span className="text-coquette-gold font-medium">Elegance Protocol Verified</span>
+            <div className="w-1.5 h-1.5 rounded-full bg-coquette-gold animate-pulse" />
           </div>
         </div>
       </header>
 
-      {/* Main Grid Interface */}
-      <main className="flex-1 relative z-10 grid lg:grid-cols-[1fr_400px] gap-12 p-10 max-w-[1600px] mx-auto w-full">
-        {/* Primary Simulation Window */}
-        <section className="flex flex-col items-center justify-center relative p-8 border-4 border-white/5 bg-black/40">
-          <div className="absolute top-4 left-4 text-[10px] font-mono text-white/20 uppercase tracking-widest">
-            SIMULATION_TARGET: SNAKE_03
-          </div>
-          <div className="absolute top-4 right-4 flex gap-2">
-            <div className="w-2 h-2 bg-neon-cyan rounded-full animate-ping" />
-            <div className="w-2 h-2 bg-neon-magenta rounded-full animate-ping" style={{ animationDelay: '0.2s' }} />
-          </div>
-
-          <motion.div 
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="relative"
-          >
+      {/* Main Content */}
+      <main className="flex-1 relative z-10 grid lg:grid-cols-[1fr_360px] gap-8 px-10 py-6 max-w-[1600px] mx-auto w-full items-center min-h-0 overflow-hidden">
+        {/* Game Simulation Window */}
+        <section className="flex flex-col items-center justify-center relative p-6 border border-black/5 bg-white/40 soft-shadow rounded-[50px] h-full max-h-full overflow-hidden">
+          <div className="relative scale-95 flex items-center justify-center">
             <SnakeGame />
-          </motion.div>
-          
-          <div className="mt-8 border-t border-white/10 pt-4 w-full flex justify-between text-[10px] font-mono text-white/20 italic">
-            <span>[CRITICAL_ERROR_LOG: NONE]</span>
-            <span>OS_REVISION: B7-X99</span>
           </div>
         </section>
 
-        {/* Neural Audio & Data Sidebar */}
-        <aside className="flex flex-col gap-10">
+        {/* Sensory Sidebar */}
+        <aside className="flex flex-col gap-6 h-full justify-center py-2 overflow-hidden">
           {/* Audio Interface */}
           <motion.div
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="p-1 bg-white/5 backdrop-blur-xl border-l-[10px] border-neon-cyan"
+            className="p-2 bg-white/60 backdrop-blur-xl rounded-[30px] border border-white shadow-sm shrink-0"
           >
-            <div className="bg-black/60 p-6">
-              <div className="mb-4 text-[11px] font-mono text-neon-cyan flex items-center gap-2 uppercase tracking-widest">
-                <Volume2 size={14} /> AUDIO_SYNC_LINK
-              </div>
+            <div className="py-8">
               <MusicPlayer />
             </div>
           </motion.div>
 
-          {/* Logic Modules */}
+          {/* Metrics Section */}
           <motion.div
             initial={{ x: 20, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.4 }}
-            className="flex-1 p-6 border-l-[10px] border-neon-magenta bg-white/5 backdrop-blur-xl group"
+            transition={{ delay: 0.2 }}
+            className="p-6 rounded-[30px] bg-white/40 backdrop-blur-xl border border-white shadow-sm flex-1 flex flex-col min-h-0"
           >
-            <div className="glitch-overlay opacity-0 group-hover:opacity-20 transition-opacity" />
-            
-            <h4 className="text-[12px] font-mono tracking-[0.3em] text-white uppercase mb-8 pb-2 border-b border-white/10 flex justify-between">
-              DATA_STACK 
-              <Zap size={14} className="text-neon-yellow" />
+            <h4 className="text-xs font-sans tracking-[0.4em] text-black uppercase mb-4 pb-2 border-b border-black/5 flex justify-between font-black shrink-0">
+              Biometrics
+              <Activity size={14} className="text-coquette-rose" />
             </h4>
             
-            <div className="space-y-8 font-mono">
+            <div className="space-y-6 font-serif italic text-black/60 overflow-y-auto no-scrollbar py-2">
               <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-[10px] text-white/40 uppercase">
-                  <span>Memory_Buffer</span>
-                  <span>78%</span>
+                <div className="flex justify-between text-[10px] uppercase tracking-widest leading-tight">
+                  <span className="font-bold">Fluidity</span>
+                  <span>92%</span>
                 </div>
-                <div className="h-2 bg-white/5 border border-white/10 p-[2px]">
+                <div className="h-1 bg-black/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: '78%' }}
-                    className="h-full bg-neon-cyan" 
+                    animate={{ width: '92%' }}
+                    className="h-full bg-coquette-rose" 
                   />
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                <div className="flex justify-between text-[10px] text-white/40 uppercase">
-                  <span>Logic_Integrity</span>
-                  <span>Verified</span>
+                <div className="flex justify-between text-[10px] uppercase tracking-widest leading-tight">
+                  <span className="font-bold">Grace Index</span>
+                  <span>9.8/10</span>
                 </div>
-                <div className="h-2 bg-white/5 border border-white/10 p-[2px]">
+                <div className="h-1 bg-black/5 rounded-full overflow-hidden">
                   <motion.div 
                     initial={{ width: 0 }}
-                    animate={{ width: '100%' }}
-                    className="h-full bg-neon-magenta shadow-[0_0_10px_rgba(255,0,255,0.5)]" 
+                    animate={{ width: '98%' }}
+                    className="h-full bg-coquette-gold" 
                   />
                 </div>
               </div>
 
-              <div className="mt-12 text-[11px] leading-relaxed text-neon-cyan/40 p-4 border border-neon-cyan/10 bg-neon-cyan/5">
-                // SYSTEM_MESSAGE: <br />
-                PRIORITY_ALERT: THE GRID IS FOLDING. <br />
-                MAINTAIN_SYNC_AT_ALL_COSTS.
+              <div className="flex flex-col gap-3 pt-4 border-t border-black/5">
+                <div className="flex justify-between text-[10px] uppercase tracking-widest leading-tight items-baseline">
+                  <span className="font-bold">Tempo State</span>
+                  <span className="text-xs text-black font-black">Allegro</span>
+                </div>
+                <p className="text-[9px] text-black/30 font-sans uppercase tracking-[0.3em] font-medium leading-relaxed">
+                  The current cadence is synchronized with neuronal output.
+                </p>
               </div>
             </div>
           </motion.div>
         </aside>
       </main>
 
-      {/* Terminal Footer */}
-      <footer className="mt-auto px-10 py-6 border-t border-white/5 font-mono text-[10px] tracking-widest text-white/10 flex justify-between uppercase">
-        <span>©2026_NEURAL_RECORDS_INC</span>
-        <div className="flex gap-8">
-          <span>IP_67.44.21.XX</span>
-          <span className="text-white/20">EST_TIME: 08:18:44</span>
+      {/* Footer */}
+      <footer className="px-12 py-3 border-t border-black/5 font-serif italic text-xs text-black/20 flex justify-between shrink-0">
+        <span>© MCMXXVI Whimsical Studio</span>
+        <div className="flex gap-6 font-sans not-italic text-[9px] tracking-[0.3em] uppercase font-bold text-black/10">
+          <span>Refinement: 1.0.0</span>
+          <span>System Cache: Optimal</span>
         </div>
       </footer>
     </div>

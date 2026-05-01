@@ -1,18 +1,45 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Trophy, RefreshCcw, Play, Pause } from 'lucide-react';
+import { Trophy, RefreshCcw, Play, Pause, Heart, Gift, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Sparkles, Crown } from 'lucide-react';
 import { GRID_SIZE, INITIAL_SNAKE, INITIAL_DIRECTION, GAME_SPEED } from '../constants';
 import { Point, GameStatus } from '../types';
+import { neuralSynth } from '../services/neuralSynth';
+
+function ControlButton({ icon, onClick, className = "" }: { icon: React.ReactNode, onClick: () => void, className?: string }) {
+  return (
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        onClick();
+      }}
+      className={`w-14 h-14 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center border border-black/10 shadow-lg active:scale-90 transition-transform cursor-pointer text-black/80 hover:text-black ${className}`}
+    >
+      {icon}
+    </button>
+  );
+}
 
 export default function SnakeGame() {
   const [snake, setSnake] = useState<Point[]>(INITIAL_SNAKE);
   const [direction, setDirection] = useState<Point>(INITIAL_DIRECTION);
+  const nextDirectionsRef = useRef<Point[]>([]);
   const [food, setFood] = useState<Point>({ x: 5, y: 5 });
+  const [bonusFood, setBonusFood] = useState<Point | null>(null);
   const [score, setScore] = useState(0);
+  const [celebration, setCelebration] = useState<{ point: Point; text: string; id: number } | null>(null);
+  const celebrationIdRef = useRef(0);
   const [status, setStatus] = useState<GameStatus>('IDLE');
   const [highScore, setHighScore] = useState(0);
 
   const gameLoopRef = useRef<NodeJS.Timeout | null>(null);
+
+  const triggerCelebration = useCallback((point: Point, text: string) => {
+    const id = ++celebrationIdRef.current;
+    setCelebration({ point, text, id });
+    setTimeout(() => {
+      setCelebration(curr => curr?.id === id ? null : curr);
+    }, 1000);
+  }, []);
 
   const generateFood = useCallback((currentSnake: Point[]) => {
     let newFood;
@@ -32,21 +59,49 @@ export default function SnakeGame() {
   const resetGame = () => {
     setSnake(INITIAL_SNAKE);
     setDirection(INITIAL_DIRECTION);
+    nextDirectionsRef.current = [];
     setFood(generateFood(INITIAL_SNAKE));
+    setBonusFood(null);
     setScore(0);
     setStatus('IDLE');
   };
 
+  const handleDirectionChange = (newDir: Point) => {
+    if (status !== 'PLAYING') return;
+    const lastInQueue = nextDirectionsRef.current[nextDirectionsRef.current.length - 1] || direction;
+    // Prevent 180 degree turns
+    if (newDir.x !== 0 && lastInQueue.x === 0 && nextDirectionsRef.current.length < 2) {
+      nextDirectionsRef.current.push(newDir);
+    } else if (newDir.y !== 0 && lastInQueue.y === 0 && nextDirectionsRef.current.length < 2) {
+      nextDirectionsRef.current.push(newDir);
+    }
+  };
+
   const moveSnake = useCallback(() => {
+    if (status !== 'PLAYING') return;
+
     setSnake((prevSnake) => {
+      let nextDir = direction;
+      if (nextDirectionsRef.current.length > 0) {
+        nextDir = nextDirectionsRef.current.shift()!;
+        setDirection(nextDir);
+      }
+
       const head = prevSnake[0];
       const newHead = {
-        x: (head.x + direction.x + GRID_SIZE) % GRID_SIZE,
-        y: (head.y + direction.y + GRID_SIZE) % GRID_SIZE,
+        x: (head.x + nextDir.x + GRID_SIZE) % GRID_SIZE,
+        y: (head.y + nextDir.y + GRID_SIZE) % GRID_SIZE,
       };
 
-      // Check collision with self
-      if (prevSnake.some((segment) => segment.x === newHead.x && segment.y === newHead.y)) {
+      const ateFood = newHead.x === food.x && newHead.y === food.y;
+      const ateBonus = bonusFood && newHead.x === bonusFood.x && newHead.y === bonusFood.y;
+
+      const bodyCollision = prevSnake.some((segment, index) => {
+        if (ateFood || ateBonus) return segment.x === newHead.x && segment.y === newHead.y;
+        return index !== prevSnake.length - 1 && segment.x === newHead.x && segment.y === newHead.y;
+      });
+
+      if (bodyCollision) {
         setStatus('GAMEOVER');
         if (score > highScore) setHighScore(score);
         return prevSnake;
@@ -54,17 +109,26 @@ export default function SnakeGame() {
 
       const newSnake = [newHead, ...prevSnake];
 
-      // Check food
-      if (newHead.x === food.x && newHead.y === food.y) {
+      if (ateFood) {
         setScore((s) => s + 10);
         setFood(generateFood(newSnake));
+        neuralSynth.playFoodSound();
+        triggerCelebration(newHead, "+10");
+        if (Math.random() > 0.8) {
+           setBonusFood(generateFood(newSnake));
+        }
+      } else if (ateBonus) {
+        setScore((s) => s + 30);
+        setBonusFood(null);
+        neuralSynth.playFoodSound();
+        triggerCelebration(newHead, "Grace! +30");
       } else {
         newSnake.pop();
       }
 
       return newSnake;
     });
-  }, [direction, food, score, highScore, generateFood]);
+  }, [direction, food, bonusFood, score, highScore, generateFood, status]);
 
   useEffect(() => {
     if (status === 'PLAYING') {
@@ -83,18 +147,23 @@ export default function SnakeGame() {
       
       switch (e.key) {
         case 'ArrowUp':
-          if (direction.y !== 1) setDirection({ x: 0, y: -1 });
+          e.preventDefault();
+          handleDirectionChange({ x: 0, y: -1 });
           break;
         case 'ArrowDown':
-          if (direction.y !== -1) setDirection({ x: 0, y: 1 });
+          e.preventDefault();
+          handleDirectionChange({ x: 0, y: 1 });
           break;
         case 'ArrowLeft':
-          if (direction.x !== 1) setDirection({ x: -1, y: 0 });
+          e.preventDefault();
+          handleDirectionChange({ x: -1, y: 0 });
           break;
         case 'ArrowRight':
-          if (direction.x !== -1) setDirection({ x: 1, y: 0 });
+          e.preventDefault();
+          handleDirectionChange({ x: 1, y: 0 });
           break;
         case ' ':
+          e.preventDefault();
           setStatus(prev => prev === 'PLAYING' ? 'PAUSED' : 'PLAYING');
           break;
       }
@@ -104,148 +173,308 @@ export default function SnakeGame() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [direction, status]);
 
+  const [showProtocol, setShowProtocol] = useState(false);
+
   return (
-    <div className="flex flex-col items-center gap-6" id="snake-game-container">
-      {/* HUD */}
-      <div className="flex gap-12 items-center bg-black/80 backdrop-blur-md px-12 py-5 rounded-none border-2 border-white/20 relative group shadow-[0_0_50px_rgba(0,0,0,1)]">
-        <div className="glitch-overlay opacity-10 group-hover:opacity-30 transition-opacity" />
-        
+    <div className="flex flex-col items-center gap-6 shrink-0" id="snake-game-container">
+      {/* Refined Score HUD */}
+      <div className="flex gap-10 items-center bg-white/80 backdrop-blur-md px-10 py-4 rounded-[24px] border border-black/5 relative group shadow-sm shrink-0">
         <div className="flex flex-col items-center">
-            <span className="text-[11px] uppercase tracking-[0.4em] text-white/40 font-mono mb-2">SCORE_VALUE</span>
-            <span className="text-6xl font-black text-neon-cyan neon-text-cyan font-mono tabular-nums tracking-tighter leading-none">
-              {score.toString().padStart(3, '0')}
+            <span className="text-[9px] uppercase tracking-[0.4em] text-black/30 font-sans mb-1.5 font-medium italic">Refined Score</span>
+            <span className="text-3xl font-serif italic text-black leading-none font-light tracking-widest">
+              {score.toString().padStart(2, '0')}
             </span>
         </div>
         
-        <div className="w-[2px] h-16 bg-white/10" />
+        <div className="w-[1px] h-10 bg-black/5" />
         
         <div className="flex flex-col items-center">
-            <span className="text-[11px] uppercase tracking-[0.4em] text-white/40 font-mono mb-2">MAX_INTEGRITY</span>
-            <div className="flex items-center gap-3">
-                <span className="text-4xl font-bold text-neon-magenta neon-text-magenta font-mono tabular-nums leading-none">
-                  {highScore.toString().padStart(3, '0')}
+            <span className="text-[9px] uppercase tracking-[0.4em] text-black/30 font-sans mb-1.5 font-medium italic">Peak Index</span>
+            <div className="flex items-center gap-2">
+                <span className="text-3xl font-serif italic text-coquette-gold leading-none font-light tracking-widest">
+                  {highScore.toString().padStart(2, '0')}
                 </span>
             </div>
         </div>
       </div>
 
-      {/* Game Board */}
-      <div className="relative group">
+      {/* Garden Game Board */}
+      <div className="relative group shrink-0">
         <div 
-          className="grid gap-[1px] bg-white/5 p-1 rounded-xl border border-white/20 shadow-2xl overflow-hidden relative"
+          className="grid gap-[1px] bg-black/5 p-4 rounded-[40px] border border-black/5 shadow-inner overflow-hidden relative bg-white/20 backdrop-blur-sm"
           style={{ 
             gridTemplateColumns: `repeat(${GRID_SIZE}, 1fr)`,
-            width: 'min(80vw, 400px)',
+            width: 'min(75vh, 420px)',
             aspectRatio: '1/1'
           }}
         >
-          {/* Grid background effect */}
-          <div className="absolute inset-0 bg-noise pointer-events-none" />
-          
           {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => {
             const x = i % GRID_SIZE;
             const y = Math.floor(i / GRID_SIZE);
-            const isSnake = snake.some(s => s.x === x && s.y === y);
-            const isHead = snake[0].x === x && snake[0].y === y;
+            const snakeIndex = snake.findIndex(s => s.x === x && s.y === y);
+            const isSnake = snakeIndex !== -1;
+            const isHead = snakeIndex === 0;
             const isFood = food.x === x && food.y === y;
+            const isBonus = bonusFood?.x === x && bonusFood?.y === y;
 
             return (
               <div 
                 key={i}
-                className="relative w-full h-full rounded-[2px]"
+                className="relative w-full h-full border border-black/[0.01]"
                 id={`cell-${x}-${y}`}
               >
                 {isSnake && (
                   <motion.div 
-                    layoutId={`snake-${isHead ? 'head' : i}`}
-                    className={`absolute inset-0 rounded-[2px] ${isHead ? 'bg-neon-cyan neon-shadow-cyan z-10' : 'bg-neon-cyan/30'}`}
+                    className={`absolute inset-[-15%] ${isHead ? 'z-40' : 'z-20'}`}
                     style={{
-                      opacity: isHead ? 1 : Math.max(0.2, 1 - (snake.findIndex(s => s.x === x && s.y === y) / snake.length)),
+                      background: isHead ? '#ff0055' : '#c2185b', // Even more vibrant pink/red for head
+                      opacity: isHead ? 1 : Math.max(0.4, 1 - (snakeIndex / 25)),
+                      scale: isHead ? 1.8 : 1.3,
                       boxShadow: isHead 
-                        ? '0 0 20px #00f2ff, 0 0 40px #00f2ff' 
-                        : `0 0 ${Math.max(5, 15 - snake.findIndex(s => s.x === x && s.y === y))}px rgba(0, 242, 255, 0.4)`
+                        ? '0 0 25px rgba(255, 0, 85, 0.9), 0 0 50px rgba(255, 0, 85, 0.4)' 
+                        : '0 2px 6px rgba(194, 24, 91, 0.3)',
+                      border: isHead ? '3px solid #fff' : '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: isHead ? '20%' : '50%',
                     }}
                     initial={false}
-                    transition={{ type: "spring", stiffness: 600, damping: 30 }}
-                  />
+                    animate={isHead ? {
+                      scale: [1.8, 2.0, 1.8],
+                      boxShadow: [
+                        '0 0 20px rgba(255, 0, 85, 0.7)',
+                        '0 0 45px rgba(255, 0, 85, 1)',
+                        '0 0 20px rgba(255, 0, 85, 0.7)'
+                      ]
+                    } : {}}
+                    transition={isHead ? { duration: 0.8, repeat: Infinity } : { type: "spring", stiffness: 800, damping: 50 }}
+                  >
+                    {isHead && (
+                      <div className="w-full h-full flex flex-col items-center justify-center relative">
+                         {/* Eyes that follow direction - sharper and higher contrast */}
+                         <div className="absolute flex gap-1.5 transition-transform duration-150"
+                           style={{ 
+                             transform: direction.y === -1 ? 'translateY(-6px)' : 
+                                        direction.y === 1 ? 'translateY(6px)' :
+                                        direction.x === -1 ? 'translateX(-6px)' : 'translateX(6px)'
+                           }}
+                         >
+                            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-md border border-black/10" />
+                            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-md border border-black/10" />
+                         </div>
+                         <div className="z-10 bg-white/20 p-0.5 rounded-sm backdrop-blur-[2px]">
+                            <Crown size={12} fill="white" className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" />
+                         </div>
+                      </div>
+                    )}
+                  </motion.div>
                 )}
                 {isFood && (
                   <motion.div 
-                    className="absolute inset-[20%] bg-neon-magenta neon-shadow-magenta rounded-full"
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 1, repeat: Infinity }}
-                  />
+                    className="absolute inset-0 bg-[#0000ff] rounded-full shadow-[0_0_25px_rgba(48,79,254,1)] z-10 flex items-center justify-center"
+                    style={{ 
+                      border: '3px solid #fff',
+                      background: 'radial-gradient(circle at 30% 30%, #a2b2ff 0%, #0000ff 100%)'
+                    }}
+                    animate={{ 
+                      scale: [1, 1.4, 1],
+                      boxShadow: [
+                        '0 0 15px rgba(48,79,254,0.5)',
+                        '0 0 40px rgba(48,79,254,1)',
+                        '0 0 15px rgba(48,79,254,0.5)'
+                      ]
+                    }}
+                    transition={{ 
+                      duration: 0.8, 
+                      repeat: Infinity,
+                    }}
+                  >
+                    <Sparkles size={12} className="text-white animate-ping" />
+                  </motion.div>
+                )}
+                {isBonus && (
+                  <motion.div 
+                    className="absolute inset-0 flex items-center justify-center text-coquette-rose drop-shadow-[0_0_8px_rgba(240,98,146,0.6)] z-10"
+                    animate={{ rotate: [-10, 10, -10], scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <Gift size={20} />
+                  </motion.div>
                 )}
               </div>
             );
           })}
+          
+          {/* Floating Celebrations */}
+          <AnimatePresence>
+            {celebration && (
+              <motion.div
+                key={celebration.id}
+                initial={{ opacity: 0, y: celebration.point.y * (100/GRID_SIZE), x: celebration.point.x * (100/GRID_SIZE) }}
+                animate={{ opacity: 1, y: celebration.point.y * (100/GRID_SIZE) - 20 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                className="absolute text-coquette-rose font-serif italic text-[14px] pointer-events-none z-50 whitespace-nowrap"
+                style={{ 
+                  left: `${(celebration.point.x / GRID_SIZE) * 100}%`,
+                  top: `${(celebration.point.y / GRID_SIZE) * 100}%`
+                }}
+              >
+                {celebration.text}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Overlay States */}
+        {/* Overlays */}
         <AnimatePresence>
           {status !== 'PLAYING' && (
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 backdrop-blur-sm bg-black/60 rounded-xl flex flex-col items-center justify-center z-20 gap-6"
+              className="absolute inset-0 backdrop-blur-[1px] bg-white/20 rounded-[30px] flex flex-col items-center justify-center z-30 gap-6"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (status === 'IDLE' || status === 'PAUSED') setStatus('PLAYING');
+              }}
             >
               {status === 'IDLE' && (
-                <button 
-                  onClick={() => setStatus('PLAYING')}
-                  className="group relative flex items-center gap-3 px-8 py-4 bg-neon-cyan text-black font-bold uppercase tracking-wider rounded-full hover:scale-105 transition-all cursor-pointer"
-                >
-                  <Play fill="black" size={20} />
-                  Start Game
-                  <div className="absolute inset-0 rounded-full blur-xl bg-neon-cyan/50 group-hover:bg-neon-cyan/80 transition-all -z-10" />
-                </button>
+                <div className="flex flex-col items-center gap-6">
+                  {showProtocol ? (
+                    <motion.div 
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="bg-white/90 p-6 rounded-[20px] border border-black/10 max-w-[260px] space-y-4"
+                    >
+                      <h3 className="text-lg font-sans tracking-[0.3em] uppercase font-black text-black border-b border-black/5 pb-2">Operation: Protocol</h3>
+                      <div className="space-y-4 text-xs font-serif italic text-black/60 leading-relaxed">
+                        <p>1. You are the <span className="text-coquette-rose font-bold">Crowned Head</span>. Control it via arrows or buttons.</p>
+                        <p>2. Assimilate <span className="text-[#304ffe] font-bold">Blue Pearls</span> to grow. Space wraps around the grid.</p>
+                        <p>3. Touching your own tail causes <span className="text-red-500">System Failure</span>.</p>
+                      </div>
+                      <button 
+                        onClick={() => setShowProtocol(false)}
+                        className="w-full py-3 bg-black text-[10px] text-white uppercase tracking-widest font-bold rounded-xl transition-all hover:bg-black/90 active:scale-95"
+                      >
+                        Acknowledge
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <>
+                      <div className="flex gap-12 items-center mb-4">
+                        <div className="flex flex-col items-center gap-2">
+                           <span className="text-[7px] uppercase tracking-widest text-black/40">You</span>
+                           <div className="w-8 h-8 bg-[#ff4081] rounded-[30%] flex items-center justify-center shadow-lg">
+                              <Crown size={12} className="text-white" />
+                           </div>
+                        </div>
+                        <div className="flex flex-col items-center gap-2">
+                           <span className="text-[7px] uppercase tracking-widest text-black/40">Target</span>
+                           <div className="w-8 h-8 bg-[#304ffe] rounded-full flex items-center justify-center shadow-lg border border-white">
+                              <Sparkles size={12} className="text-white" />
+                           </div>
+                        </div>
+                      </div>
+                      
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setStatus('PLAYING');
+                        }}
+                        className="group relative flex flex-col items-center gap-4 cursor-pointer"
+                      >
+                        <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center border border-black/5 soft-shadow group-hover:scale-110 transition-transform">
+                           <Play fill="black" size={24} />
+                        </div>
+                        <span className="text-xs font-sans tracking-[0.4em] text-black/80 uppercase font-black">Begin Sequence</span>
+                      </button>
+                      
+                      <div className="flex flex-col gap-4 items-center mt-2">
+                        <p className="text-xs font-serif italic text-black/50 leading-relaxed max-w-[240px] text-center">
+                          Assimilate the <span className="text-[#304ffe] font-bold">Blue Pearl</span> to expand the ribbon loop.
+                        </p>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowProtocol(true);
+                          }}
+                          className="px-6 py-2 border border-black/10 rounded-full text-[9px] uppercase tracking-widest font-black hover:bg-black hover:text-white transition-all active:scale-95"
+                        >
+                          Access Protocol
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
 
               {status === 'PAUSED' && (
                 <div className="flex flex-col items-center gap-4">
-                  <h2 className="text-4xl font-black text-white italic tracking-tighter uppercase">Paused</h2>
+                  <h2 className="text-3xl font-serif italic text-black font-light tracking-tight">Repose</h2>
                   <button 
                     onClick={() => setStatus('PLAYING')}
-                    className="flex items-center gap-2 text-neon-cyan hover:text-white transition-colors uppercase text-sm font-bold tracking-widest"
+                    className="group w-14 h-14 rounded-full bg-white flex items-center justify-center border border-black/5 shadow-sm hover:scale-110 transition-transform cursor-pointer"
                   >
-                    <Play size={16} /> Resume
+                    <Play fill="black" size={20} />
                   </button>
                 </div>
               )}
 
               {status === 'GAMEOVER' && (
-                <div className="flex flex-col items-center gap-6">
-                  <motion.div 
-                    initial={{ scale: 0.5, rotate: -10 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    className="text-center"
+                <motion.div 
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  className="flex flex-col items-center gap-6 px-10 text-center"
+                >
+                  <motion.div
+                    animate={{ rotate: [-2, 2, -2] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <h2 className="text-6xl font-black text-neon-magenta neon-text-magenta italic uppercase tracking-tighter mb-2">Game Over</h2>
-                    <p className="text-white/60 font-mono text-sm uppercase tracking-[0.3em]">Final Score: {score}</p>
+                    <h2 className="text-4xl font-serif italic text-black font-light leading-none">
+                      {score > 0 && score === highScore ? 'Peak Grace' : 'The End'}
+                    </h2>
                   </motion.div>
-                  <button 
-                    onClick={resetGame}
-                    className="flex items-center gap-3 px-8 py-3 border-2 border-white text-white font-bold uppercase tracking-widest rounded-full hover:bg-white hover:text-black transition-all cursor-pointer"
-                  >
-                    <RefreshCcw size={20} /> Try Again
-                  </button>
-                </div>
+                  
+                  <div className="space-y-1">
+                    <p className="text-black/30 font-sans text-[9px] uppercase tracking-[0.4em]">Final Refinement: {score}</p>
+                    {score === highScore && score > 0 && (
+                      <p className="text-coquette-gold font-serif italic text-[11px]">A new peak of elegance reached.</p>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={resetGame}
+                      className="group flex items-center gap-2 px-6 py-2 bg-black text-white hover:bg-coquette-gold transition-colors cursor-pointer rounded-full shadow-lg active:scale-95"
+                    >
+                      <RefreshCcw size={14} className="group-hover:rotate-180 transition-transform duration-500" />
+                      <span className="text-[9px] font-sans font-bold uppercase tracking-[0.2em]">Restart</span>
+                    </button>
+                  </div>
+                </motion.div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* Controls Help */}
-      <div className="flex gap-6 text-[10px] text-white/20 uppercase tracking-[0.2em] font-mono">
-        <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 border border-white/10 rounded">Arrows</span>
-            Move
+      {/* On-Screen Touch Controls */}
+      <div className="flex flex-col items-center gap-1 mt-1">
+        <ControlButton icon={<ChevronUp size={20} />} onClick={() => handleDirectionChange({ x: 0, y: -1 })} />
+        <div className="flex gap-10">
+          <ControlButton icon={<ChevronLeft size={20} />} onClick={() => handleDirectionChange({ x: -1, y: 0 })} />
+          <ControlButton icon={<ChevronRight size={20} />} onClick={() => handleDirectionChange({ x: 1, y: 0 })} />
         </div>
-        <div className="flex items-center gap-2">
-            <span className="px-1.5 py-0.5 border border-white/10 rounded">Space</span>
-            Pause
-        </div>
+        <ControlButton icon={<ChevronDown size={20} />} onClick={() => handleDirectionChange({ x: 0, y: 1 })} />
+      </div>
+
+      {/* Manual Controls Help */}
+      <div className="flex items-center gap-6 mt-1">
+        <span className="text-[8px] text-black/20 uppercase tracking-[0.3em] font-sans font-bold italic">Arrow Keys or Buttons to Move</span>
+        <button 
+          onClick={() => setStatus('PAUSED')}
+          className="w-6 h-6 rounded-full bg-white/60 flex items-center justify-center border border-black/5 hover:bg-white transition-colors cursor-pointer"
+        >
+          <Pause size={10} fill="black" />
+        </button>
       </div>
     </div>
   );

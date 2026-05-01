@@ -1,77 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Space Mono", monospace;
-  --font-mono: "VT323", monospace;
-  --color-neon-cyan: #00f2ff;
-  --color-neon-magenta: #ff00ff;
-  --color-neon-green: #39ff14;
-  --color-neon-yellow: #fff01f;
-  --color-cyber-black: #050505;
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Inter", sans-serif;
+  
+  --color-coquette-pink: #fce4ec;
+  --color-coquette-cream: #fff9f5;
+  --color-coquette-sage: #e8f5e9;
+  --color-coquette-gold: #d4af37;
+  --color-coquette-rose: #f8bbd0;
 }
 
 @layer utilities {
-  .neon-shadow-cyan {
-    box-shadow: 0 0 15px #00f2ff, 0 0 30px #00f2ff;
+  .soft-shadow {
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.03);
   }
-  .neon-shadow-magenta {
-    box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff;
+  .gold-glow {
+    filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.4));
   }
-  .neon-text-cyan {
-    text-shadow: 2px 0 #ff00ff, -2px 0 #00f2ff;
+  .pearl-glow {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.9));
   }
-  .neon-text-magenta {
-    text-shadow: 2px 0 #00f2ff, -2px 0 #ff00ff;
+  .ribbon-gradient {
+    background: linear-gradient(90deg, #fce4ec 0%, #f8bbd0 100%);
   }
-  
-  .bg-noise {
+  .paper-texture {
+    background-color: #fff9f5;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-    opacity: 0.15;
+    background-blend-mode: overlay;
+    opacity: 0.95;
   }
-
-  /* Scanline Effect */
-  .scanlines {
-    position: relative;
-    overflow: hidden;
-  }
-  .scanlines::before {
-    content: " ";
-    display: block;
-    position: absolute;
-    top: 0; left: 0; bottom: 0; right: 0;
-    background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-    z-index: 2;
-    background-size: 100% 4px, 3px 100%;
-    pointer-events: none;
-  }
-
-  @keyframes glitch-skew {
-    0% { transform: skew(0deg); }
-    20% { transform: skew(-5deg); }
-    40% { transform: skew(5deg); }
-    60% { transform: skew(-10deg); }
-    80% { transform: skew(10deg); }
-    100% { transform: skew(0deg); }
-  }
-
-  @keyframes screen-tear {
-    0% { clip-path: inset(40% 0 61% 0); transform: translateX(-10px); }
-    20% { clip-path: inset(92% 0 1% 0); transform: translateX(10px); }
-    40% { clip-path: inset(43% 0 1% 0); transform: translateX(-5px); }
-    60% { clip-path: inset(25% 0 58% 0); transform: translateX(5px); }
-    80% { clip-path: inset(54% 0 7% 0); transform: translateX(-2px); }
-    100% { clip-path: inset(58% 0 43% 0); transform: translateX(2px); }
-  }
-
-  .glitch-overlay {
-    position: absolute;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: inherit;
-    animation: screen-tear 4s infinite linear alternate-reverse;
-    opacity: 0.3;
-    pointer-events: none;
-    z-index: 5;
+  .watercolor-floral {
+    background-image: radial-gradient(circle at 10% 10%, rgba(252, 228, 236, 0.4) 0%, transparent 40%),
+                      radial-gradient(circle at 90% 90%, rgba(232, 245, 233, 0.4) 0%, transparent 40%);
   }
 }
