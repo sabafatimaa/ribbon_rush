@@ -9,7 +9,7 @@ A coquette-styled, retro-futurist reimagining of the classic Snake game. **Ribbo
 
 **Live Demo:** [ribbon-rush.vercel.app](https://ribbon-rush.vercel.app)
 
-## 🎮 How to Play
+## How to Play
 
 * **Move:** `Arrow Keys` (Up, Down, Left, Right)
 * **Mobile / Touch:** Swipe or tap on-screen controls
