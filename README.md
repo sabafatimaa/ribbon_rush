@@ -1,62 +1,33 @@
 # Ribbon Rush 🎀🐍
 
-A coquette-styled, retro-futurist reimagining of the classic Snake game. Built with a blend of playful aesthetics and modern web technologies, **Ribbon Rush** brings a fresh visual twist to arcade nostalgia.
+[![Vercel Deployment](https://img.shields.io/badge/status-live-brightgreen)](https://ribbon-rush.vercel.app)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-![Ribbon Rush Banner](https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop) 
+A coquette-styled, retro-futurist reimagining of the classic Snake game. **Ribbon Rush** blends nostalgic arcade mechanics with a dreamy, modern aesthetic for a fresh take on a timeless favorite.
 
----
+## Play the Game
 
-## Features
+**Live Demo:** [ribbon-rush.vercel.app](https://ribbon-rush.vercel.app)
 
-* **Coquette & Retro-Futurist Aesthetic:** Styled with soft pinks, ribbons, and sleek arcade-inspired UI elements.
-* **Smooth Controls:** Responsive keyboard and touch handling for fluid movement.
-* **High Score Tracking:** Local storage integration to keep track of your best runs.
-* **Dynamic Gameplay:** Increasing speed and difficulty as you collect items and grow your ribbon.
+## 🎮 How to Play
 
----
+* **Move:** `Arrow Keys` (Up, Down, Left, Right)
+* **Mobile / Touch:** Swipe or tap on-screen controls
 
-## Tech Stack
+## Highlights
 
-* **Framework:** React 18
-* **Build Tool:** Vite
-* **Styling:** Tailwind CSS
-* **Language:** TypeScript
-* **AI Integration:** Google AI Studio (leveraged during development and asset ideation)
+* **Coquette & Retro-Futurist Aesthetic:** Designed with soft pink palettes, ribbon motifs, and sleek arcade visuals.
+* **Responsive Gameplay:** Smooth controls optimized for both desktop keyboards and mobile touchscreens.
+* **High Score Tracking:** Automatically saves your best score locally in your browser.
 
----
+## Built With
 
-## Getting Started
-
-Follow these steps to run the project locally on your machine.
-
-### Prerequisites
-
-Make sure you have Node.js (version 16 or higher) installed on your system.
-
-### Installation
-
-1. Clone the repository:
-   https://github.com/sabafatimaa/ribbon_rush.git
-   
-
-2. Install package dependencies:
-   npm install
-
-3. Start the local development server:
-   npm run dev
-
-4. Open your browser and visit http://localhost:5173.
-
-## Production Build
-
-To compile an optimized production build locally:
-
-npm run build
-
-## Live Demo
-
-Experience the live game here: [ribbon-rush.vercel.app](https://ribbon-rush.vercel.app)
+* React 18 & TypeScript
+* Tailwind CSS
+* Vite
+* Google AI Studio
+* Hosted on Vercel
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is licensed under the MIT License.
