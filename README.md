@@ -36,8 +36,8 @@ Make sure you have Node.js (version 16 or higher) installed on your system.
 ### Installation
 
 1. Clone the repository:
-   git clone https://github.com/sabafatimaa/ribbon-rush.git
-   cd ribbon-rush
+   https://github.com/sabafatimaa/ribbon_rush
+   
 
 2. Install package dependencies:
    npm install
